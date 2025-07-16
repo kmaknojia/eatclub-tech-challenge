@@ -33,6 +33,12 @@ A Java project using Maven for build management.
 - Time comparisons are inclusive of both start and end times
 - A deal is considered active at both its start and end times
 - This ensures consistent behavior for boundary cases
+- Example: If a deal starts at 12:00 and ends at 12:30, it is considered active from 12:00 to 12:30 inclusive
+
+### Deal Timing Must Honor Restaurant Operating Hours
+- If deal duration exceeds restaurant operating hours, the deal is considered active during the restaurant's opening hours
+- Example: If a deal starts at 12:00 and ends at 15:30 and restaurant operating hours are 14:00 to 22:30, then deal is considered active from 14:00 to 15:30 inclusive
+
 
 ## Project Structure
 ```
@@ -56,6 +62,47 @@ mvn clean package
 ```bash
 mvn test
 ```
+
+## Local Testing with AWS SAM
+
+### Prerequisites
+- AWS SAM CLI installed
+- Docker installed and running (required for local Lambda testing)
+- AWS CLI configured with appropriate credentials
+- Maven installed
+
+### Setting Up Local Environment
+
+1. **Install AWS SAM CLI**
+   Follow the official AWS SAM CLI installation guide for your operating system:
+   [AWS SAM CLI Installation Guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+
+2. **Install Docker**
+   - Download and install Docker Desktop for your OS: [Docker Desktop](https://www.docker.com/products/docker-desktop)
+   - Ensure Docker is running before starting local testing
+
+### Running Tests Locally
+
+1. **Build the application**
+   ```bash
+   mvn clean package
+   ```
+
+2. **Start the API locally**
+   ```bash
+   sam local start-api --warm-containers EAGER --template template.yaml --parameter-overrides RequireApiKeyForCloud='true'
+   ```
+   This will start a local API Gateway on `http://127.0.0.1:3000`
+
+3. **Test the endpoints**
+   - Get active deals:
+     ```bash
+     curl "http://127.0.0.1:3000/v1/restaurants/deals?timeOfDay=6:30pm"
+     ```
+   - Get peak times:
+     ```bash
+     curl http://127.0.0.1:3000/v1/restaurants/deals/peak-times
+     ```
 
 ## AWS Deployment
 
@@ -87,7 +134,8 @@ mvn test
      --stack-name eatclub-restaurant-deals \
      --capabilities CAPABILITY_IAM \
      --region ap-southeast-2 \
-     --parameter-overrides Environment=dev
+     --parameter-overrides Environment=dev \
+     --parameter-overrides RequireApiKeyForCloud='true'
    ```
 
 4. **Verify the deployment**
@@ -99,12 +147,12 @@ mvn test
 
 #### Task 1: Get Active Deals
 ```bash
-curl -X GET https://x0318heqfe.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm
+curl -X GET -H "X-API-Key: xyrYAZTeJb297Wi95MuAM5OXIGYELRE87Ld0yhMB" "https://4bazj1l4vi.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm"
 ```
 
 #### Task 2: Get Peak Times for Deals
 ```bash
-curl -X GET https://x0318heqfe.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
+curl -X GET -H "X-API-Key: xyrYAZTeJb297Wi95MuAM5OXIGYELRE87Ld0yhMB" "https://4bazj1l4vi.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
 ```
 
 ### Cleanup

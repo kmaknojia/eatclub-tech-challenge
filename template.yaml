@@ -1,11 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  EatClub Tech Challenge - Restaurant Deals API
+  EatClub Tech Challenge - Restaurant Deals API (with OpenAPI Definition for API Key Control and Custom Log Groups)
 
 Globals:
   Function:
-    Timeout: 30
+    Timeout: 60
     MemorySize: 512
     Runtime: java17
     Architectures:
@@ -28,6 +28,22 @@ Parameters:
       - prod
     Description: Deployment environment
 
+  RequireApiKeyForCloud:
+    Type: String
+    Default: 'true' # Default to 'true' for cloud deployments (API Key required)
+    AllowedValues: ['true', 'false']
+    Description: 'Set to "true" to require an API Key for API Gateway in cloud; "false" for local SAM testing.'
+
+  # New Parameter for Log Retention
+  LogRetentionInDays:
+    Type: Number
+    Default: 7 # Default to 7 days retention
+    Description: 'Number of days to retain CloudWatch Logs for Lambda functions.'
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653] # Common retention periods
+
+Conditions:
+  IsApiKeyRequiredInCloud: !Equals [!Ref RequireApiKeyForCloud, 'true']
+
 Resources:
   # API Gateway
   EatClubApi:
@@ -39,6 +55,91 @@ Resources:
         AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
       EndpointConfiguration: REGIONAL
+      DefinitionBody:
+        openapi: 3.0.1
+        info:
+          title: !Sub "${AWS::StackName}-Api"
+          version: '1.0'
+        components:
+          !If
+          - IsApiKeyRequiredInCloud
+          - securitySchemes:
+              ApiKeyAuth:
+                type: apiKey
+                in: header
+                name: x-api-key
+          - {}
+
+        paths:
+          /v1/restaurants/deals/peak-times:
+            get:
+              summary: Get Peak Times for Deals
+              operationId: getPeakTimesForDeals
+              security: !If
+                - IsApiKeyRequiredInCloud
+                - - ApiKeyAuth: []
+                - []
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPeakTimeForDealsFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+              responses:
+                '200':
+                  description: A list of peak times.
+          /v1/restaurants/deals:
+            get:
+              summary: Get Active Deals
+              operationId: getActiveDeals
+              security: !If
+                - IsApiKeyRequiredInCloud
+                - - ApiKeyAuth: []
+                - []
+              x-amazon-apigateway-integration:
+                uri: !Sub "arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetActiveDealsFunction.Arn}/invocations"
+                passthroughBehavior: when_no_match
+                httpMethod: POST
+                type: aws_proxy
+              responses:
+                '200':
+                  description: A list of active deals.
+
+  # --- Conditional API Key and Usage Plan Resources ---
+  EatClubApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Condition: IsApiKeyRequiredInCloud
+    Properties:
+      Name: !Sub ${AWS::StackName}-ApiKey-${Environment}
+      Description: !Sub "API Key for ${AWS::StackName} in ${Environment} environment"
+      Enabled: true
+      StageKeys:
+        - RestApiId: !Ref EatClubApi
+          StageName: !Ref EatClubApi.Stage
+
+  EatClubUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Condition: IsApiKeyRequiredInCloud
+    Properties:
+      UsagePlanName: !Sub ${AWS::StackName}-UsagePlan-${Environment}
+      Description: !Sub "Usage Plan for ${AWS::StackName} in ${Environment} environment"
+      Quota:
+        Limit: 1000
+        Period: DAY
+      Throttle:
+        RateLimit: 100
+        BurstLimit: 200
+      ApiStages:
+        - ApiId: !Ref EatClubApi
+          Stage: !Ref EatClubApi.Stage
+
+  # --- NEW: Link API Key to Usage Plan ---
+  EatClubUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Condition: IsApiKeyRequiredInCloud # Only create this link if API Key is required
+    Properties:
+      KeyId: !Ref EatClubApiKey # Reference the API Key to link
+      KeyType: API_KEY # Must be 'API_KEY'
+      UsagePlanId: !Ref EatClubUsagePlan # Reference the Usage Plan to link to
 
   # GetPeakTimeForDeals Lambda Function
   GetPeakTimeForDealsFunction:
@@ -60,7 +161,21 @@ Resources:
       Tags:
         Name: !Sub ${AWS::StackName}-get-peak-times
 
-  # GetActiveDeals Lambda Function (existing, for reference)
+  # --- NEW: CloudWatch Log Group for GetPeakTimeForDealsFunction ---
+  GetPeakTimeForDealsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${GetPeakTimeForDealsFunction} # Standard Lambda Log Group naming convention
+      RetentionInDays: !Ref LogRetentionInDays # Use the parameter for retention
+      Tags:
+        - Key: Project
+          Value: EatClubTechChallenge
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: FunctionName
+          Value: GetPeakTimeForDealsFunction
+
+  # GetActiveDeals Lambda Function
   GetActiveDealsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -77,13 +192,25 @@ Resources:
       Tags:
         Name: !Sub ${AWS::StackName}-get-active-deals
 
+  # --- NEW: CloudWatch Log Group for GetActiveDealsFunction ---
+  GetActiveDealsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${GetActiveDealsFunction} # Standard Lambda Log Group naming convention
+      RetentionInDays: !Ref LogRetentionInDays # Use the parameter for retention
+      Tags:
+        - Key: Project
+          Value: EatClubTechChallenge
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: FunctionName
+          Value: GetActiveDealsFunction
+
 Outputs:
-  # API Endpoint
   ApiUrl:
     Description: "API Gateway endpoint URL for stage"
     Value: !Sub "https://${EatClubApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
 
-  # Lambda Function ARNs
   GetPeakTimeForDealsFunction:
     Description: "Get Peak Time For Deals Lambda Function ARN"
     Value: !GetAtt GetPeakTimeForDealsFunction.Arn
@@ -91,3 +218,19 @@ Outputs:
   GetActiveDealsFunction:
     Description: "Get Active Deals Lambda Function ARN"
     Value: !GetAtt GetActiveDealsFunction.Arn
+
+  ApiKeyId:
+    Description: "ID of the generated API Key (only if required)"
+    Value: !If [IsApiKeyRequiredInCloud, !Ref EatClubApiKey, !Ref "AWS::NoValue"]
+    Condition: IsApiKeyRequiredInCloud
+
+  UsagePlanId:
+    Description: "ID of the generated Usage Plan (only if required)"
+    Value: !If [IsApiKeyRequiredInCloud, !Ref EatClubUsagePlan, !Ref "AWS::NoValue"]
+    Condition: IsApiKeyRequiredInCloud
+
+  # NEW: Output the Usage Plan Key ID (if created)
+  UsagePlanKeyId:
+    Description: "ID of the generated Usage Plan Key (only if required)"
+    Value: !If [IsApiKeyRequiredInCloud, !Ref EatClubUsagePlanKey, !Ref "AWS::NoValue"]
+    Condition: IsApiKeyRequiredInCloud

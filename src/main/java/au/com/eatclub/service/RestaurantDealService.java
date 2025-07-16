@@ -23,13 +23,8 @@ import java.util.List;
 public class RestaurantDealService {
     private static final int MINUTES_IN_HOUR = 60;
     public static final int DAY_TOTAL_MINUTES = 24 * MINUTES_IN_HOUR;
-    private final RestaurantRepository repository;
-    private final DealMapper mapper;
-
-    public RestaurantDealService() {
-        this.repository = new RestaurantRepository();
-        this.mapper = DealMapper.INSTANCE;
-    }
+    private  RestaurantRepository repository = new RestaurantRepository();
+    private static final DealMapper mapper = DealMapper.INSTANCE;
 
     /**
      * Retrieves all active deals across all restaurants at the specified time.

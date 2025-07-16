@@ -21,6 +21,7 @@
         <mockito.version>5.10.0</mockito.version>
         <lambda.core.version>1.2.2</lambda.core.version>
         <lombok.version>1.18.30</lombok.version>
+        <slf4j.version>2.0.9</slf4j.version>
         <log4j.version>2.20.0</log4j.version>
         <aws.lambda.log4j2.version>1.5.1</aws.lambda.log4j2.version>
         <aws.lambda.events.version>3.11.0</aws.lambda.events.version>
@@ -54,6 +55,16 @@
 
     <dependencies>
         <!-- Logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
