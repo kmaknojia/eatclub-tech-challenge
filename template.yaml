@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  EatClub Tech Challenge - Restaurant Deals API
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: java17
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+    Tracing: Active
+    Tags:
+      Project: EatClubTechChallenge
+      Environment: !Ref Environment
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+    Description: Deployment environment
+
+Resources:
+  # API Gateway
+  EatClubApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      Cors:
+        AllowMethods: "'GET,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+      EndpointConfiguration: REGIONAL
+
+  # GetPeakTimeForDeals Lambda Function
+  GetPeakTimeForDealsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/eatclub-tech-challenge-1.0-jar-with-dependencies.jar
+      Handler: au.com.eatclub.lambda.GetPeakTimeForDealsHandler::handleRequest
+      Description: Returns peak times for restaurant deals
+      MemorySize: 1024
+      Policies:
+        - AWSLambdaBasicExecutionRole
+      Events:
+        GetPeakTimes:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EatClubApi
+            Path: /v1/restaurants/deals/peak-times
+            Method: GET
+      Tags:
+        Name: !Sub ${AWS::StackName}-get-peak-times
+
+  # GetActiveDeals Lambda Function (existing, for reference)
+  GetActiveDealsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/eatclub-tech-challenge-1.0-jar-with-dependencies.jar
+      Handler: au.com.eatclub.lambda.GetActiveDealsHandler::handleRequest
+      Description: Returns active deals at a given time
+      Events:
+        GetActiveDeals:
+          Type: Api
+          Properties:
+            RestApiId: !Ref EatClubApi
+            Path: /v1/restaurants/deals
+            Method: GET
+      Tags:
+        Name: !Sub ${AWS::StackName}-get-active-deals
+
+Outputs:
+  # API Endpoint
+  ApiUrl:
+    Description: "API Gateway endpoint URL for stage"
+    Value: !Sub "https://${EatClubApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/"
+
+  # Lambda Function ARNs
+  GetPeakTimeForDealsFunction:
+    Description: "Get Peak Time For Deals Lambda Function ARN"
+    Value: !GetAtt GetPeakTimeForDealsFunction.Arn
+
+  GetActiveDealsFunction:
+    Description: "Get Active Deals Lambda Function ARN"
+    Value: !GetAtt GetActiveDealsFunction.Arn
