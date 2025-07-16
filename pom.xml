@@ -22,8 +22,8 @@
         <lambda.core.version>1.2.2</lambda.core.version>
         <lombok.version>1.18.30</lombok.version>
         <slf4j.version>2.0.9</slf4j.version>
-        <log4j.version>2.20.0</log4j.version>
-        <aws.lambda.log4j2.version>1.5.1</aws.lambda.log4j2.version>
+        <log4j.version>2.22.0</log4j.version>
+        <aws.lambda.log4j2.version>1.6.0</aws.lambda.log4j2.version>
         <aws.lambda.events.version>3.11.0</aws.lambda.events.version>
         <jsr305.version>3.0.2</jsr305.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
