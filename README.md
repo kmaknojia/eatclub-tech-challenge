@@ -147,13 +147,54 @@ mvn test
 
 #### Task 1: Get Active Deals
 ```bash
-curl -X GET -H "X-API-Key: xyrYAZTeJb297Wi95MuAM5OXIGYELRE87Ld0yhMB" "https://4bazj1l4vi.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm"
+curl -X GET -H "X-API-Key: pG9xJ0YIoA6MrQHRyD7m08oburFGTHeL3hw48L6X" "https://urky82rfx9.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm"
 ```
 
 #### Task 2: Get Peak Times for Deals
 ```bash
-curl -X GET -H "X-API-Key: xyrYAZTeJb297Wi95MuAM5OXIGYELRE87Ld0yhMB" "https://4bazj1l4vi.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
+curl -X GET -H "X-API-Key: pG9xJ0YIoA6MrQHRyD7m08oburFGTHeL3hw48L6X" "https://urky82rfx9.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
 ```
+
+### AWS Resources 
+
+| Resource Type | Logical ID | Description |
+|--------------|------------|-------------|
+| `AWS::ApiGateway::RestApi` | `EatClubApi` (AWS::Serverless::Api) | Core API Gateway that exposes your endpoints |
+| `AWS::ApiGateway::ApiKey` | `EatClubApiKey` | API Key for authentication (created if `RequireApiKeyForCloud` is 'true') |
+| `AWS::ApiGateway::UsagePlan` | `EatClubUsagePlan` | Defines usage limits and quotas (created if `RequireApiKeyForCloud` is 'true') |
+| `AWS::ApiGateway::UsagePlanKey` | `EatClubUsagePlanKey` | Links API Key to Usage Plan (created if `RequireApiKeyForCloud` is 'true') |
+| `AWS::ApiGateway::Stage` | `EatClubApi` (implicit) | API Gateway Stage based on `StageName` (e.g., dev, staging, prod) |
+| `AWS::ApiGateway::Deployment` | Auto-generated | Created automatically when API definition changes |
+| `AWS::Lambda::Function` | `GetPeakTimeForDealsFunction` | Handles peak times logic |
+| `AWS::Lambda::Function` | `GetActiveDealsFunction` | Handles active deals logic |
+| `AWS::Logs::LogGroup` | `GetPeakTimeForDealsFunctionLogGroup` | CloudWatch Logs for peak times function |
+| `AWS::Logs::LogGroup` | `GetActiveDealsFunctionLogGroup` | CloudWatch Logs for active deals function |
+| `AWS::IAM::Role` | `GetPeakTimeForDealsFunctionRole` | IAM role for the peak times Lambda function |
+| `AWS::IAM::Role` | `GetActiveDealsFunctionRole` | IAM role for the active deals Lambda function |
+| `AWS::Lambda::Permission` | `GetPeakTimeForDealsFunctionPermission` | Permission for API Gateway to invoke peak times function |
+| `AWS::Lambda::Permission` | `GetActiveDealsFunctionPermission` | Permission for API Gateway to invoke active deals function |
+
+These resources are automatically created by AWS SAM/CloudFormation:
+
+- **IAM Roles**
+  - Created for each Lambda function with `AWSLambdaBasicExecutionRole` policy
+  - Grants permissions to write logs to CloudWatch
+  - One for `GetPeakTimeForDealsFunction`
+  - One for `GetActiveDealsFunction`
+
+- **Lambda Permissions**
+  - Created when Lambda functions are associated with API Gateway events
+  - Allows API Gateway to invoke the Lambda functions
+  - One for `GetPeakTimeForDealsFunction`
+  - One for `GetActiveDealsFunction`
+
+- **API Gateway Resources**
+  - **Stage**: Created based on the `StageName` property (e.g., dev, staging, prod)
+  - **Deployment**: Created automatically when the API definition changes
+    - Represents a snapshot of the API configuration
+    - Associated with the API stage
+    - A new deployment is created on relevant API definition updates
+
 
 ### Cleanup
 To remove all resources created by this deployment:
