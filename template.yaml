@@ -135,11 +135,11 @@ Resources:
   # --- NEW: Link API Key to Usage Plan ---
   EatClubUsagePlanKey:
     Type: AWS::ApiGateway::UsagePlanKey
-    Condition: IsApiKeyRequiredInCloud # Only create this link if API Key is required
+    Condition: IsApiKeyRequiredInCloud
     Properties:
-      KeyId: !Ref EatClubApiKey # Reference the API Key to link
-      KeyType: API_KEY # Must be 'API_KEY'
-      UsagePlanId: !Ref EatClubUsagePlan # Reference the Usage Plan to link to
+      KeyId: !Ref EatClubApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref EatClubUsagePlan
 
   # GetPeakTimeForDeals Lambda Function
   GetPeakTimeForDealsFunction:
@@ -165,8 +165,8 @@ Resources:
   GetPeakTimeForDealsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${GetPeakTimeForDealsFunction} # Standard Lambda Log Group naming convention
-      RetentionInDays: !Ref LogRetentionInDays # Use the parameter for retention
+      LogGroupName: !Sub /aws/lambda/${GetPeakTimeForDealsFunction}
+      RetentionInDays: !Ref LogRetentionInDays
       Tags:
         - Key: Project
           Value: EatClubTechChallenge
@@ -196,8 +196,8 @@ Resources:
   GetActiveDealsFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub /aws/lambda/${GetActiveDealsFunction} # Standard Lambda Log Group naming convention
-      RetentionInDays: !Ref LogRetentionInDays # Use the parameter for retention
+      LogGroupName: !Sub /aws/lambda/${GetActiveDealsFunction}
+      RetentionInDays: !Ref LogRetentionInDays
       Tags:
         - Key: Project
           Value: EatClubTechChallenge
