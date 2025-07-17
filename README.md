@@ -147,12 +147,12 @@ mvn test
 
 #### Task 1: Get Active Deals
 ```bash
-curl -X GET -H "X-API-Key: pG9xJ0YIoA6MrQHRyD7m08oburFGTHeL3hw48L6X" "https://urky82rfx9.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm"
+curl -X GET -H "X-API-Key: piuPYOiogF7zNQsEwTJ691NLYns1GeTRaiCvYywp" "https://n32mwoqqab.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals?timeOfDay=8:32pm"
 ```
 
 #### Task 2: Get Peak Times for Deals
 ```bash
-curl -X GET -H "X-API-Key: pG9xJ0YIoA6MrQHRyD7m08oburFGTHeL3hw48L6X" "https://urky82rfx9.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
+curl -X GET -H "X-API-Key: piuPYOiogF7zNQsEwTJ691NLYns1GeTRaiCvYywp" "https://n32mwoqqab.execute-api.ap-southeast-2.amazonaws.com/dev/v1/restaurants/deals/peak-times
 ```
 
 ### AWS Resources 

@@ -17,6 +17,16 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * AWS Lambda function handler for retrieving active restaurant deals at a specific time.
+ * This handler processes API Gateway proxy requests containing a 'timeOfDay' query parameter
+ * and returns a list of active deals available at that time.
+ * 
+ * <p>Example request: v1/restaurants/deals/active?timeOfDay=6:30PM
+ * 
+ * <p>Implements AWS Lambda's RequestHandler interface to process API Gateway proxy events.
+ * Returns responses in JSON format with appropriate HTTP status codes.
+ */
 public class GetActiveDealsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private static final Logger logger = LogManager.getLogger(GetActiveDealsHandler.class);
     private  RestaurantDealService service = new RestaurantDealService();

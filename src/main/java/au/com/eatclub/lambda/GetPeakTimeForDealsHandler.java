@@ -14,6 +14,17 @@ import software.amazon.awssdk.http.HttpStatusCode;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * AWS Lambda function handler for retrieving peak times of restaurant deals.
+ * This handler processes API Gateway proxy requests to find the time ranges when
+ * the highest number of restaurant deals are active.
+ * 
+ * <p>Example request: v1/restaurants/deals/peak-times
+ * 
+ * <p>Implements AWS Lambda's RequestHandler interface to process API Gateway proxy events.
+ * Returns a list of DealPeakTime objects in JSON format, each containing a time range
+ * and the count of active deals during that range.
+ */
 public class GetPeakTimeForDealsHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
     private static final Logger logger = LogManager.getLogger(GetPeakTimeForDealsHandler.class);
     private  RestaurantDealService service = new RestaurantDealService();
